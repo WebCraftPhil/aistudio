@@ -15,6 +15,13 @@ const badgeVariants = cva(
         outline: "border-border text-foreground [a]:hover:bg-muted [a]:hover:text-muted-foreground",
         ghost: "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
         link: "text-primary underline-offset-4 hover:underline",
+        // Status variants for property table
+        "status-active": "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
+        "status-pending": "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/20",
+        "status-completed": "bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/20",
+        "status-archived": "bg-zinc-500/15 text-zinc-600 dark:text-zinc-400 border-zinc-500/20",
+        // Tag variant for property tags
+        tag: "bg-muted text-muted-foreground rounded-md px-2.5 py-0.5 text-[11px]",
       },
     },
     defaultVariants: {
