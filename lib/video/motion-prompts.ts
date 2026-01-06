@@ -1,40 +1,50 @@
 import type { VideoRoomType } from "@/lib/db/schema"
 
 /**
- * Default motion prompts for Kling Video generation
- * These prompts describe camera movements and visual style for each room type
+ * Default motion prompts for Kling Video v2.6 Pro generation
+ *
+ * Best practices from Kling 2.6 Pro Prompt Guide:
+ * @see https://fal.ai/learn/devs/kling-2-6-pro-prompt-guide
+ *
+ * Structure: [Camera action] + [Direction/Speed] + [Distance/Framing] + [Subject focus] + [Style]
+ *
+ * Key principles:
+ * - Use consistent motion language: "camera tracks", "camera pushes forward"
+ * - Specify camera distance and framing for visual coherence
+ * - Break complex movements into simpler instructions
+ * - Avoid multiple simultaneous camera transformations
  */
 
 export const DEFAULT_MOTION_PROMPTS: Record<VideoRoomType, string> = {
   "exterior-front":
-    "Slow cinematic pan across the front of the property, showcasing curb appeal, landscaping, and architectural details. Smooth dolly movement, professional real estate photography style.",
+    "Camera slowly tracks right across the front facade at medium distance. Steady movement reveals landscaping, driveway, and architectural details. Eye-level framing, natural daylight, professional real estate cinematography.",
 
   entryway:
-    "Gentle forward dolly shot entering through the front door, revealing the interior space. Warm welcoming atmosphere, natural lighting, smooth camera movement.",
+    "Camera pushes forward slowly through the front door at eye level. Smooth, steady motion reveals the interior space ahead. Warm ambient lighting, welcoming atmosphere, professional real estate style.",
 
   "living-room":
-    "Slow sweeping pan across the living room, highlighting furniture arrangement, natural light through windows, and spacious layout. Elegant cinematic movement, luxury real estate style.",
+    "Camera tracks left to right across the living room at medium distance. Steady horizontal movement showcases furniture arrangement and natural window light. Eye-level framing, spacious feel, luxury real estate cinematography.",
 
   kitchen:
-    "Smooth tracking shot along the kitchen counters and appliances, showcasing the workspace, cabinetry, and modern fixtures. Professional real estate photography, clean lines.",
+    "Camera tracks slowly along the kitchen countertops from left to right. Maintains consistent distance, showcasing cabinetry, appliances, and workspace. Clean lines, bright lighting, professional real estate style.",
 
   "dining-room":
-    "Elegant orbit around the dining table, capturing the ambiance, decor, and connection to adjacent spaces. Warm lighting, sophisticated camera movement.",
+    "Camera slowly pulls back to reveal the dining area at eye level. Steady backward motion shows table setting and connection to adjacent spaces. Warm ambient lighting, elegant atmosphere, professional cinematography.",
 
   bedroom:
-    "Soft pan across the bedroom, emphasizing comfort, spaciousness, and natural light. Calm, inviting atmosphere, gentle camera movement highlighting restful space.",
+    "Camera tracks gently across the bedroom at medium distance. Smooth horizontal movement emphasizes spaciousness and natural light from windows. Calm atmosphere, soft lighting, professional real estate style.",
 
   bathroom:
-    "Gentle reveal shot of the bathroom fixtures, finishes, and spa-like features. Clean, bright lighting, smooth professional camera movement.",
+    "Camera pushes forward slowly into the bathroom space. Steady motion reveals fixtures, finishes, and spa-like features. Bright, clean lighting, eye-level framing, professional real estate cinematography.",
 
   office:
-    "Professional pan across the office space, showing desk setup, natural light, and productive environment. Clean, organized, modern style.",
+    "Camera tracks right across the office space at eye level. Steady movement showcases desk area, natural window light, and organized environment. Clean, modern style, professional real estate cinematography.",
 
   "exterior-back":
-    "Wide cinematic sweep of the backyard, outdoor living space, pool area, or garden. Expansive view, golden hour lighting style, showcase outdoor amenities.",
+    "Camera slowly tracks left to right across the backyard at medium distance. Steady movement reveals outdoor living space, landscaping, and amenities. Golden hour lighting style, expansive view, professional cinematography.",
 
   other:
-    "Smooth panning motion revealing the space and its unique features. Professional real estate photography style, natural lighting, elegant movement.",
+    "Camera tracks slowly across the space at medium distance. Steady horizontal movement reveals room features and natural lighting. Eye-level framing, professional real estate cinematography style.",
 }
 
 // Get motion prompt for a room type
@@ -60,11 +70,17 @@ export function generateMotionPrompt(
 export const DEFAULT_NEGATIVE_PROMPT =
   "blurry, low resolution, distorted, shaky camera, fast movement, jerky motion, overexposed, underexposed, watermark, text overlay"
 
-// Prompt enhancement tips for real estate videos
+/**
+ * Prompt enhancement tips for real estate videos
+ * Based on Kling 2.6 Pro Prompt Guide best practices
+ * @see https://fal.ai/learn/devs/kling-2-6-pro-prompt-guide
+ */
 export const PROMPT_TIPS = [
-  "Use 'slow' or 'gentle' for smooth camera movements",
-  "Mention 'natural light' for daytime scenes",
-  "Include 'golden hour' for warm, inviting atmosphere",
-  "Add 'professional real estate' for polished look",
-  "Specify 'wide angle' for spacious feel",
+  "Use 'camera tracks left/right' for horizontal movement",
+  "Use 'camera pushes forward' for walking/entering effect",
+  "Use 'camera pulls back' to reveal a space",
+  "Specify 'eye-level framing' for natural perspective",
+  "Add 'steady movement' or 'smooth motion' for stability",
+  "Avoid combining multiple camera movements (e.g., 'pan while zooming')",
+  "Include 'professional real estate cinematography' for polished style",
 ]

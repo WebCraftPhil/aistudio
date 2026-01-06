@@ -42,7 +42,6 @@ import {
 } from "@/components/ui/alert-dialog"
 import type { VideoProject, VideoClip, MusicTrack, VideoProjectStatus } from "@/lib/db/schema"
 import { VIDEO_ROOM_TYPES } from "@/lib/video/room-sequence"
-import { formatVideoCost } from "@/lib/video/video-constants"
 import { cn } from "@/lib/utils"
 import { deleteVideoProject, retryFailedClip } from "@/lib/actions/video"
 import type { generateVideoTask } from "@/trigger/video-orchestrator"
@@ -588,12 +587,6 @@ export function VideoDetailContent({
                     {videoProject.durationSeconds
                       ? `${Math.floor(videoProject.durationSeconds / 60)}:${(videoProject.durationSeconds % 60).toString().padStart(2, "0")}`
                       : `~${videoProject.clipCount * 5}s`}
-                  </dd>
-                </div>
-                <div className="border-t pt-3 flex justify-between">
-                  <dt className="text-muted-foreground">Cost</dt>
-                  <dd className="font-bold" style={{ color: "var(--accent-amber)" }}>
-                    {formatVideoCost(videoProject.actualCost ? videoProject.actualCost / 100 : videoProject.estimatedCost / 100)}
                   </dd>
                 </div>
               </dl>
