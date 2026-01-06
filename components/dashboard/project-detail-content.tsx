@@ -18,6 +18,10 @@ import {
   IconPlus,
   IconRefresh,
   IconPencil,
+  IconX,
+  IconTrash,
+  IconChevronLeft,
+  IconChevronRight,
 } from "@tabler/icons-react"
 
 import { Button } from "@/components/ui/button"
@@ -118,41 +122,50 @@ function ImageCard({
 
       {/* Status overlay for non-completed */}
       {!isCompleted && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-          {image.status === "processing" ? (
-            <div className="flex flex-col items-center gap-2">
-              <IconLoader2 className="h-8 w-8 animate-spin text-white" />
-              <span className="text-sm font-medium text-white">Processing…</span>
-            </div>
-          ) : image.status === "pending" ? (
-            <div className="flex flex-col items-center gap-2">
-              <IconClock className="h-8 w-8 text-white/70" />
-              <span className="text-sm font-medium text-white/70">Pending</span>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center gap-2">
-              <IconAlertTriangle className="h-8 w-8 text-red-400" />
-              <span className="text-sm font-medium text-red-400">Failed</span>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onRetry()
-                }}
-                disabled={isRetrying}
-                className="mt-1 gap-1.5 bg-white/90 text-foreground hover:bg-white"
-              >
-                {isRetrying ? (
-                  <IconLoader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <IconRefresh className="h-3.5 w-3.5" />
-                )}
-                Retry
-              </Button>
-            </div>
+        <>
+          {/* Shimmer effect for processing */}
+          {image.status === "processing" && (
+            <div className="image-shimmer absolute inset-0 bg-black/30" />
           )}
-        </div>
+          <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+            {image.status === "processing" ? (
+              <div className="flex flex-col items-center gap-3">
+                <div className="relative">
+                  <div className="h-12 w-12 rounded-full border-2 border-white/20" />
+                  <div className="absolute inset-0 h-12 w-12 animate-spin rounded-full border-2 border-transparent border-t-white" />
+                </div>
+                <span className="text-sm font-medium text-white">Enhancing…</span>
+              </div>
+            ) : image.status === "pending" ? (
+              <div className="flex flex-col items-center gap-2">
+                <IconClock className="h-8 w-8 text-white/70" />
+                <span className="text-sm font-medium text-white/70">Queued</span>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-2">
+                <IconAlertTriangle className="h-8 w-8 text-red-400" />
+                <span className="text-sm font-medium text-red-400">Failed</span>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onRetry()
+                  }}
+                  disabled={isRetrying}
+                  className="mt-1 gap-1.5 bg-white/90 text-foreground hover:bg-white"
+                >
+                  {isRetrying ? (
+                    <IconLoader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <IconRefresh className="h-3.5 w-3.5" />
+                  )}
+                  Retry
+                </Button>
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       {/* Selection indicator */}
@@ -418,6 +431,160 @@ function ComparisonView({
   )
 }
 
+function ImageLightbox({
+  images,
+  currentIndex,
+  onClose,
+  onNavigate,
+  onEdit,
+  onDownload,
+  onCompare,
+}: {
+  images: ImageGroup[]
+  currentIndex: number
+  onClose: () => void
+  onNavigate: (index: number) => void
+  onEdit: (image: ImageGeneration) => void
+  onDownload: (image: ImageGeneration) => void
+  onCompare: (image: ImageGeneration) => void
+}) {
+  const currentGroup = images[currentIndex]
+  const currentImage = currentGroup?.latestVersion
+  const displayUrl = currentImage?.resultImageUrl || currentImage?.originalImageUrl
+  const hasEnhancedVersion = currentImage?.resultImageUrl && currentImage.originalImageUrl
+
+  // Keyboard navigation
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft" && currentIndex > 0) {
+        onNavigate(currentIndex - 1)
+      } else if (e.key === "ArrowRight" && currentIndex < images.length - 1) {
+        onNavigate(currentIndex + 1)
+      } else if (e.key === "Escape") {
+        onClose()
+      } else if (e.key === "c" && hasEnhancedVersion) {
+        onCompare(currentImage)
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown)
+    return () => document.removeEventListener("keydown", handleKeyDown)
+  }, [currentIndex, images.length, onNavigate, onClose, onCompare, currentImage, hasEnhancedVersion])
+
+  if (!currentImage || !displayUrl) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col bg-black/95">
+      {/* Top bar */}
+      <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center gap-3">
+          <span className="font-mono text-sm text-white/70">
+            {currentIndex + 1} / {images.length}
+          </span>
+          {currentGroup.versions.length > 1 && (
+            <span className="rounded-full bg-purple-500/20 px-2 py-0.5 text-xs text-purple-300">
+              v{currentImage.version || 1}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {hasEnhancedVersion && (
+            <button
+              onClick={() => onCompare(currentImage)}
+              className="flex h-9 w-9 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+              title="Compare (C)"
+            >
+              <IconArrowsMaximize className="h-5 w-5" />
+            </button>
+          )}
+          <button
+            onClick={() => onDownload(currentImage)}
+            className="flex h-9 w-9 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+            title="Download"
+          >
+            <IconDownload className="h-5 w-5" />
+          </button>
+          <button
+            onClick={() => onEdit(currentImage)}
+            className="flex h-9 w-9 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+            title="Edit"
+          >
+            <IconPencil className="h-5 w-5" />
+          </button>
+          <button
+            onClick={onClose}
+            className="flex h-9 w-9 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+            title="Close (Esc)"
+          >
+            <IconX className="h-5 w-5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Main image area */}
+      <div className="relative flex flex-1 items-center justify-center px-16">
+        {/* Previous button */}
+        {currentIndex > 0 && (
+          <button
+            onClick={() => onNavigate(currentIndex - 1)}
+            className="absolute left-4 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+          >
+            <IconChevronLeft className="h-6 w-6" />
+          </button>
+        )}
+
+        {/* Image */}
+        <div className="relative h-full w-full max-w-5xl">
+          <Image
+            src={displayUrl}
+            alt={`Image ${currentIndex + 1}`}
+            fill
+            className="object-contain"
+            sizes="(max-width: 1280px) 100vw, 1280px"
+            priority
+          />
+        </div>
+
+        {/* Next button */}
+        {currentIndex < images.length - 1 && (
+          <button
+            onClick={() => onNavigate(currentIndex + 1)}
+            className="absolute right-4 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+          >
+            <IconChevronRight className="h-6 w-6" />
+          </button>
+        )}
+      </div>
+
+      {/* Filmstrip */}
+      <div className="flex justify-center gap-2 overflow-x-auto px-4 py-4">
+        {images.map((group, index) => {
+          const thumbUrl = group.latestVersion.resultImageUrl || group.latestVersion.originalImageUrl
+          const isActive = index === currentIndex
+          return (
+            <button
+              key={group.rootId}
+              onClick={() => onNavigate(index)}
+              className={cn(
+                "relative h-16 w-16 shrink-0 overflow-hidden rounded-lg ring-2 transition-all",
+                isActive ? "ring-white" : "ring-transparent opacity-50 hover:opacity-80"
+              )}
+            >
+              <Image
+                src={thumbUrl}
+                alt={`Thumbnail ${index + 1}`}
+                fill
+                className="object-cover"
+                sizes="64px"
+              />
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 interface ProjectDetailContentProps {
   project: Project
   images: ImageGeneration[]
@@ -429,6 +596,7 @@ export function ProjectDetailContent({ project, images }: ProjectDetailContentPr
   const [editingImage, setEditingImage] = React.useState<ImageGeneration | null>(null)
   const [editingImageLatestVersion, setEditingImageLatestVersion] = React.useState<number>(1)
   const [addImagesOpen, setAddImagesOpen] = React.useState(false)
+  const [lightboxIndex, setLightboxIndex] = React.useState<number | null>(null)
   const [retryingImageId, setRetryingImageId] = React.useState<string | null>(null)
   const [versionSelectorGroup, setVersionSelectorGroup] = React.useState<ImageGroup | null>(null)
   const [isDownloading, setIsDownloading] = React.useState(false)
@@ -575,6 +743,79 @@ export function ProjectDetailContent({ project, images }: ProjectDetailContentPr
     return () => clearInterval(interval)
   }, [images, router])
 
+  // Keyboard shortcuts
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in an input
+      const target = e.target as HTMLElement
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) {
+        return
+      }
+
+      // Lightbox has its own keyboard handlers, don't duplicate
+      if (lightboxIndex !== null) {
+        return
+      }
+
+      // Escape - clear selection or close modals
+      if (e.key === "Escape") {
+        if (versionSelectorGroup) {
+          setVersionSelectorGroup(null)
+        } else if (selectedImage) {
+          setSelectedImage(null)
+        } else if (editingImage) {
+          setEditingImage(null)
+        } else if (selectedImageIds.size > 0) {
+          clearSelection()
+        }
+        return
+      }
+
+      // A - select all completed images
+      if (e.key === "a" && !e.metaKey && !e.ctrlKey) {
+        const allCompletedIds = imageGroups
+          .filter((g) => g.latestVersion.status === "completed")
+          .map((g) => g.latestVersion.id)
+        setSelectedImageIds(new Set(allCompletedIds))
+        return
+      }
+
+      // D - download
+      if (e.key === "d" && !e.metaKey && !e.ctrlKey) {
+        if (completedImages.length > 0) {
+          handleDownload()
+        }
+        return
+      }
+
+      // E - edit (only if exactly one image selected)
+      if (e.key === "e" && !e.metaKey && !e.ctrlKey) {
+        if (selectedImageIds.size === 1) {
+          const selectedId = Array.from(selectedImageIds)[0]
+          const group = imageGroups.find((g) => g.latestVersion.id === selectedId)
+          if (group && group.latestVersion.status === "completed") {
+            startEditing(group.latestVersion)
+          }
+        }
+        return
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown)
+    return () => document.removeEventListener("keydown", handleKeyDown)
+  }, [
+    selectedImageIds,
+    selectedImage,
+    editingImage,
+    versionSelectorGroup,
+    lightboxIndex,
+    imageGroups,
+    completedImages,
+    clearSelection,
+    handleDownload,
+    startEditing,
+  ])
+
   return (
     <>
       <div className="space-y-6 px-4 md:px-6 lg:px-8">
@@ -612,36 +853,20 @@ export function ProjectDetailContent({ project, images }: ProjectDetailContentPr
                 Add More
               </Button>
             )}
-            {completedImages.length > 0 && (
-              <div className="flex items-center gap-2">
-                {selectedImageIds.size > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearSelection}
-                    className="text-muted-foreground"
-                  >
-                    Clear selection
-                  </Button>
+            {completedImages.length > 0 && selectedImageIds.size === 0 && (
+              <Button
+                className="gap-2"
+                style={{ backgroundColor: "var(--accent-teal)" }}
+                onClick={handleDownload}
+                disabled={isDownloading}
+              >
+                {isDownloading ? (
+                  <IconLoader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <IconDownload className="h-4 w-4" />
                 )}
-                <Button
-                  className="gap-2"
-                  style={{ backgroundColor: "var(--accent-teal)" }}
-                  onClick={handleDownload}
-                  disabled={isDownloading}
-                >
-                  {isDownloading ? (
-                    <IconLoader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <IconDownload className="h-4 w-4" />
-                  )}
-                  {isDownloading
-                    ? "Preparing…"
-                    : selectedImageIds.size > 0
-                      ? `Download Selected (${selectedImageIds.size})`
-                      : "Download All"}
-                </Button>
-              </div>
+                {isDownloading ? "Preparing…" : "Download All"}
+              </Button>
             )}
           </div>
         </div>
@@ -745,8 +970,8 @@ export function ProjectDetailContent({ project, images }: ProjectDetailContentPr
                   isSelected={selectedImageIds.has(group.latestVersion.id)}
                   onToggleSelect={() => toggleImageSelection(group.latestVersion.id)}
                   onCompare={() => {
-                    if (group.latestVersion.status === "completed" && group.latestVersion.resultImageUrl) {
-                      setSelectedImage(group.latestVersion)
+                    if (group.latestVersion.status === "completed") {
+                      setLightboxIndex(index)
                     }
                   }}
                   onEdit={() => {
@@ -781,6 +1006,63 @@ export function ProjectDetailContent({ project, images }: ProjectDetailContentPr
           )}
         </div>
       </div>
+
+      {/* Floating Selection Bar */}
+      {selectedImageIds.size > 0 && (
+        <div className="animate-slide-up fixed inset-x-0 bottom-0 z-40 flex items-center justify-center p-4">
+          <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-card/95 px-6 py-3 shadow-2xl backdrop-blur-xl">
+            <div className="flex items-center gap-2">
+              <div
+                className="flex h-7 w-7 items-center justify-center rounded-full"
+                style={{ backgroundColor: "var(--accent-teal)" }}
+              >
+                <IconCheck className="h-4 w-4 text-white" />
+              </div>
+              <span className="font-medium">
+                {selectedImageIds.size} selected
+              </span>
+            </div>
+
+            <div className="h-6 w-px bg-border" />
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearSelection}
+                className="gap-1.5 text-muted-foreground hover:text-foreground"
+              >
+                <IconX className="h-4 w-4" />
+                Clear
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1.5 text-red-500 hover:bg-red-500/10 hover:text-red-500"
+              >
+                <IconTrash className="h-4 w-4" />
+                Delete
+              </Button>
+
+              <Button
+                size="sm"
+                onClick={handleDownload}
+                disabled={isDownloading}
+                className="gap-1.5"
+                style={{ backgroundColor: "var(--accent-teal)" }}
+              >
+                {isDownloading ? (
+                  <IconLoader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <IconDownload className="h-4 w-4" />
+                )}
+                Download
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Comparison modal */}
       {selectedImage && selectedImage.resultImageUrl && (
@@ -822,6 +1104,25 @@ export function ProjectDetailContent({ project, images }: ProjectDetailContentPr
             startEditing(version)
           }}
           onClose={() => setVersionSelectorGroup(null)}
+        />
+      )}
+
+      {/* Image Lightbox Gallery */}
+      {lightboxIndex !== null && (
+        <ImageLightbox
+          images={imageGroups}
+          currentIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onNavigate={setLightboxIndex}
+          onEdit={(image) => {
+            setLightboxIndex(null)
+            startEditing(image)
+          }}
+          onDownload={handleDownloadSingle}
+          onCompare={(image) => {
+            setLightboxIndex(null)
+            setSelectedImage(image)
+          }}
         />
       )}
     </>
