@@ -27,6 +27,10 @@ export interface GenerateVideoStatus {
 
 export const generateVideoTask = task({
   id: "generate-video",
+  queue: {
+    name: "video-generation",
+    concurrencyLimit: 1,
+  },
   maxDuration: 1800, // 30 minutes total
   retry: {
     maxAttempts: 1, // Don't retry the orchestrator itself

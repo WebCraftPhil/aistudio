@@ -193,6 +193,9 @@ export async function triggerVideoGeneration(videoProjectId: string) {
       {
         videoProjectId,
       },
+      {
+        queue: "video-generation",
+      },
     );
 
     if (!handle?.id) {
