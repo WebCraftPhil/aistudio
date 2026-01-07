@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useQueryState, parseAsStringLiteral } from "nuqs";
 import type {
   VideoRoomType,
   VideoAspectRatio,
@@ -38,7 +39,6 @@ export interface VideoImageItem {
 }
 
 export interface VideoCreationState {
-  step: VideoCreationStep;
   selectedTemplateId: string | null;
   projectName: string;
   images: VideoImageItem[];
@@ -64,9 +64,25 @@ const TEMPLATE_FLOW_STEPS: VideoCreationStep[] = [
   "review",
 ];
 
+const ALL_STEPS: VideoCreationStep[] = [
+  "select-template",
+  "storyboard",
+  "select-images",
+  "assign-rooms",
+  "select-music",
+  "review",
+];
+
 export function useVideoCreation() {
+  // Step is managed in URL for browser back/forward navigation
+  const [step, setStep] = useQueryState(
+    "step",
+    parseAsStringLiteral(ALL_STEPS)
+      .withDefault("select-template")
+      .withOptions({ history: "push" })
+  );
+
   const [state, setState] = React.useState<VideoCreationState>({
-    step: "select-template",
     selectedTemplateId: null,
     projectName: "",
     images: [],
@@ -76,10 +92,6 @@ export function useVideoCreation() {
     generateNativeAudio: VIDEO_DEFAULTS.GENERATE_NATIVE_AUDIO,
     isSubmitting: false,
   });
-
-  const setStep = React.useCallback((step: VideoCreationStep) => {
-    setState((prev) => ({ ...prev, step }));
-  }, []);
 
   const setTemplateId = React.useCallback((id: string | null) => {
     setState((prev) => ({
@@ -283,33 +295,27 @@ export function useVideoCreation() {
   }, []);
 
   const goToNextStep = React.useCallback(() => {
-    setState((prev) => {
-      const stepList = prev.selectedTemplateId
-        ? TEMPLATE_FLOW_STEPS
-        : CUSTOM_FLOW_STEPS;
-      const currentIndex = stepList.indexOf(prev.step);
-      if (currentIndex < stepList.length - 1) {
-        return { ...prev, step: stepList[currentIndex + 1] };
-      }
-      return prev;
-    });
-  }, []);
+    const stepList = state.selectedTemplateId
+      ? TEMPLATE_FLOW_STEPS
+      : CUSTOM_FLOW_STEPS;
+    const currentIndex = stepList.indexOf(step);
+    if (currentIndex < stepList.length - 1) {
+      setStep(stepList[currentIndex + 1]);
+    }
+  }, [step, state.selectedTemplateId, setStep]);
 
   const goToPreviousStep = React.useCallback(() => {
-    setState((prev) => {
-      const stepList = prev.selectedTemplateId
-        ? TEMPLATE_FLOW_STEPS
-        : CUSTOM_FLOW_STEPS;
-      const currentIndex = stepList.indexOf(prev.step);
-      if (currentIndex > 0) {
-        return { ...prev, step: stepList[currentIndex - 1] };
-      }
-      return prev;
-    });
-  }, []);
+    const stepList = state.selectedTemplateId
+      ? TEMPLATE_FLOW_STEPS
+      : CUSTOM_FLOW_STEPS;
+    const currentIndex = stepList.indexOf(step);
+    if (currentIndex > 0) {
+      setStep(stepList[currentIndex - 1]);
+    }
+  }, [step, state.selectedTemplateId, setStep]);
 
   const canProceed = React.useCallback(() => {
-    switch (state.step) {
+    switch (step) {
       case "select-template":
         // Always allowed to proceed - if they select a template, we go to storyboard.
         // If they don't (conceptually "custom"), they click "Start from Scratch" which sets template to null and goes to select-images.
@@ -347,11 +353,11 @@ export function useVideoCreation() {
       default:
         return false;
     }
-  }, [state]);
+  }, [step, state]);
 
   const reset = React.useCallback(() => {
+    setStep("select-template");
     setState({
-      step: "select-template",
       selectedTemplateId: null,
       projectName: "",
       images: [],
@@ -361,9 +367,10 @@ export function useVideoCreation() {
       generateNativeAudio: VIDEO_DEFAULTS.GENERATE_NATIVE_AUDIO,
       isSubmitting: false,
     });
-  }, []);
+  }, [setStep]);
 
   return {
+    step,
     ...state,
     setStep,
     setTemplateId,
