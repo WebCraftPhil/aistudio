@@ -105,6 +105,7 @@ export const VIDEO_TEMPLATES = [
     name: "Detailed Room Tour",
     description: "A focused look at a single room from multiple angles.",
     thumbnailUrl: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&q=80",
+    previewVideoUrl: "https://cdn.coverr.co/videos/coverr-interior-design-living-room-2646/1080p.mp4",
     estimatedDuration: 15,
     slots: [
       {
@@ -129,6 +130,7 @@ export const VIDEO_TEMPLATES = [
     name: "Exterior Showcase",
     description: "Highlighting the property's curb appeal and outdoor living.",
     thumbnailUrl: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80",
+    previewVideoUrl: "https://cdn.coverr.co/videos/coverr-interior-design-living-room-2646/1080p.mp4",
     estimatedDuration: 15,
     slots: [
       {
@@ -153,6 +155,7 @@ export const VIDEO_TEMPLATES = [
     name: "Social Media Teaser",
     description: "Fast-paced, high-impact edit perfect for Instagram or TikTok.",
     thumbnailUrl: "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&q=80",
+    previewVideoUrl: "https://cdn.coverr.co/videos/coverr-interior-design-living-room-2646/1080p.mp4",
     estimatedDuration: 10,
     slots: [
       {
