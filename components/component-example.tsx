@@ -1,6 +1,8 @@
 "use client";
 
+import { Suspense } from "react";
 import * as React from "react";
+import { useSession } from "@/lib/auth-client";
 
 import { Example, ExampleWrapper } from "@/components/example";
 import {
@@ -95,6 +97,34 @@ import {
 } from "@tabler/icons-react";
 import Link from "next/link";
 
+function AuthButtons() {
+  const { data: session, isPending } = useSession();
+
+  if (isPending) {
+    return <div className="skeleton h-11 w-32 rounded-md" />;
+  }
+
+  if (session) {
+    return (
+      <Button asChild size="lg">
+        <Link href="/dashboard">
+          Dashboard
+          <IconArrowRight className="size-4" />
+        </Link>
+      </Button>
+    );
+  }
+
+  return (
+    <Button asChild size="lg">
+      <Link href="/sign-in">
+        Sign in
+        <IconArrowRight className="size-4" />
+      </Link>
+    </Button>
+  );
+}
+
 export function ComponentExample() {
   return (
     <ExampleWrapper>
@@ -105,18 +135,9 @@ export function ComponentExample() {
           Transform your real estate photos with AI-powered enhancements
         </p>
         <div className="flex justify-center gap-3 pt-2">
-          <Button asChild size="lg">
-            <Link href="/dashboard">
-              Dashboard
-              <IconArrowRight className="size-4" />
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="lg">
-            <Link href="/admin">
-              Admin
-              <IconArrowRight className="size-4" />
-            </Link>
-          </Button>
+          <Suspense fallback={<div className="skeleton h-11 w-32 rounded-md" />}>
+            <AuthButtons />
+          </Suspense>
         </div>
       </div>
 

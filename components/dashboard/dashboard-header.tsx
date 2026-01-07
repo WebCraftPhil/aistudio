@@ -28,7 +28,7 @@ export function DashboardHeader({ userLabel }: DashboardHeaderProps) {
           {/* Left side: Logo + Navigation */}
           <div className="flex items-center gap-4 min-w-0">
             <Link
-              href="/dashboard"
+              href="/"
               className="font-semibold tracking-tight text-foreground hover:text-foreground/80 transition-colors truncate"
             >
               AI Studio
@@ -53,7 +53,7 @@ export function DashboardHeader({ userLabel }: DashboardHeaderProps) {
                     size="sm"
                     className={cn(
                       "h-8 gap-2 transition-all",
-                      isActive && "font-medium",
+                      isActive && "font-medium"
                     )}
                   >
                     <Link href={item.href}>
