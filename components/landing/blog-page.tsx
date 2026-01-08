@@ -1,4 +1,8 @@
-import { IconSearch } from "@tabler/icons-react";
+"use client";
+
+import { IconFileSearch, IconSearch } from "@tabler/icons-react";
+import { useMemo } from "react";
+import { useBlogFilters } from "@/hooks/use-blog-filters";
 import type { BlogPostMeta } from "@/lib/blog";
 import { BlogCard } from "./blog-card";
 import { LandingFooter } from "./landing-footer";
@@ -10,8 +14,32 @@ interface BlogPageProps {
 }
 
 export function BlogPage({ posts, categories }: BlogPageProps) {
-  const featuredPosts = posts.filter((post) => post.featured);
-  const regularPosts = posts.filter((post) => !post.featured);
+  const { category, setCategory, search, setSearch } = useBlogFilters();
+
+  // Filter posts based on category and search
+  const filteredPosts = useMemo(() => {
+    return posts.filter((post) => {
+      // Category filter
+      if (category && post.category !== category) {
+        return false;
+      }
+      // Search filter
+      if (search) {
+        const searchLower = search.toLowerCase();
+        const matchesTitle = post.title.toLowerCase().includes(searchLower);
+        const matchesDescription = post.description
+          .toLowerCase()
+          .includes(searchLower);
+        if (!(matchesTitle || matchesDescription)) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [posts, category, search]);
+
+  const featuredPosts = filteredPosts.filter((post) => post.featured);
+  const regularPosts = filteredPosts.filter((post) => !post.featured);
 
   return (
     <div
@@ -53,26 +81,43 @@ export function BlogPage({ posts, categories }: BlogPageProps) {
             <div className="flex flex-wrap items-center justify-center gap-2">
               <button
                 className="rounded-full px-4 py-2 font-medium text-sm transition-colors"
-                style={{
-                  backgroundColor: "var(--landing-accent)",
-                  color: "var(--landing-accent-foreground)",
-                }}
+                onClick={() => setCategory(null)}
+                style={
+                  category
+                    ? {
+                        backgroundColor: "var(--landing-card)",
+                        color: "var(--landing-text)",
+                        border: "1px solid var(--landing-border)",
+                      }
+                    : {
+                        backgroundColor: "var(--landing-accent)",
+                        color: "var(--landing-accent-foreground)",
+                      }
+                }
                 type="button"
               >
                 All Posts
               </button>
-              {categories.map((category) => (
+              {categories.map((cat) => (
                 <button
                   className="rounded-full px-4 py-2 font-medium text-sm transition-colors hover:opacity-80"
-                  key={category}
-                  style={{
-                    backgroundColor: "var(--landing-card)",
-                    color: "var(--landing-text)",
-                    border: "1px solid var(--landing-border)",
-                  }}
+                  key={cat}
+                  onClick={() => setCategory(cat)}
+                  style={
+                    category === cat
+                      ? {
+                          backgroundColor: "var(--landing-accent)",
+                          color: "var(--landing-accent-foreground)",
+                        }
+                      : {
+                          backgroundColor: "var(--landing-card)",
+                          color: "var(--landing-text)",
+                          border: "1px solid var(--landing-border)",
+                        }
+                  }
                   type="button"
                 >
-                  {category}
+                  {cat}
                 </button>
               ))}
             </div>
@@ -111,7 +156,8 @@ export function BlogPage({ posts, categories }: BlogPageProps) {
                 className="font-semibold text-sm uppercase tracking-wider"
                 style={{ color: "var(--landing-text-muted)" }}
               >
-                All Articles
+                {category ? category : "All Articles"}
+                {search && ` matching "${search}"`}
               </h2>
               <div className="relative">
                 <IconSearch
@@ -121,6 +167,7 @@ export function BlogPage({ posts, categories }: BlogPageProps) {
                 <input
                   aria-label="Search articles"
                   className="h-10 w-48 rounded-full pr-4 pl-9 text-sm outline-none transition-all placeholder:opacity-50 focus:w-64 focus:ring-2"
+                  onChange={(e) => setSearch(e.target.value || null)}
                   placeholder="Search…"
                   style={{
                     backgroundColor: "var(--landing-card)",
@@ -128,6 +175,7 @@ export function BlogPage({ posts, categories }: BlogPageProps) {
                     border: "1px solid var(--landing-border)",
                   }}
                   type="text"
+                  value={search ?? ""}
                 />
               </div>
             </div>
@@ -139,10 +187,49 @@ export function BlogPage({ posts, categories }: BlogPageProps) {
                 ))}
               </div>
             ) : (
-              <div className="py-12 text-center">
-                <p style={{ color: "var(--landing-text-muted)" }}>
-                  No articles found. Check back soon for new content.
+              <div className="py-16 text-center">
+                <div
+                  className="mx-auto mb-6 flex size-16 items-center justify-center rounded-full"
+                  style={{
+                    backgroundColor: "var(--landing-bg)",
+                    border: "1px solid var(--landing-border)",
+                  }}
+                >
+                  <IconFileSearch
+                    className="size-8"
+                    style={{ color: "var(--landing-text-muted)" }}
+                  />
+                </div>
+                <h3
+                  className="font-semibold text-lg"
+                  style={{ color: "var(--landing-text)" }}
+                >
+                  No articles found
+                </h3>
+                <p
+                  className="mx-auto mt-2 max-w-sm text-sm"
+                  style={{ color: "var(--landing-text-muted)" }}
+                >
+                  {search || category
+                    ? "Try adjusting your filters or search term to find what you're looking for."
+                    : "Check back soon for new content."}
                 </p>
+                {(search || category) && (
+                  <button
+                    className="mt-6 inline-flex h-10 items-center rounded-full px-6 font-medium text-sm transition-all duration-200 hover:scale-[1.03]"
+                    onClick={() => {
+                      setCategory(null);
+                      setSearch(null);
+                    }}
+                    style={{
+                      backgroundColor: "var(--landing-accent)",
+                      color: "var(--landing-accent-foreground)",
+                    }}
+                    type="button"
+                  >
+                    Clear filters
+                  </button>
+                )}
               </div>
             )}
           </div>
