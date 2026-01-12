@@ -53,7 +53,15 @@ function SignInForm() {
           router.push(redirectTo);
         },
         onError: (ctx) => {
-          toast.error(ctx.error.message || "Invalid email or password");
+          if (ctx.error.status === 403) {
+            // Email not verified - verification email was resent automatically
+            toast.error(
+              "Please verify your email. We've sent a new verification link."
+            );
+            router.push("/verify-email");
+          } else {
+            toast.error(ctx.error.message || "Invalid email or password");
+          }
           setIsLoading(false);
         },
       }
@@ -83,7 +91,15 @@ function SignInForm() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password">Password</Label>
+              <Link
+                className="text-muted-foreground text-sm underline-offset-4 hover:text-foreground hover:underline"
+                href="/forgot-password"
+              >
+                Forgot password?
+              </Link>
+            </div>
             <Input
               autoComplete="current-password"
               disabled={isLoading}

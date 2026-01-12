@@ -77,6 +77,16 @@ const statusConfig: Record<MemberStatus, { label: string; className: string }> =
     },
   };
 
+function getRoleBackgroundColor(role: UserRole): string | undefined {
+  if (role === "owner") {
+    return "color-mix(in oklch, var(--accent-teal) 15%, transparent)";
+  }
+  if (role === "admin") {
+    return "color-mix(in oklch, var(--accent-amber) 15%, transparent)";
+  }
+  return undefined;
+}
+
 function MemberAvatar({ member }: { member: TeamMember }) {
   const initials = member.name
     .split(" ")
@@ -117,7 +127,9 @@ function MemberRow({
   const status = statusConfig[member.status];
 
   const handleCopyInviteLink = async () => {
-    if (!member.inviteToken) return;
+    if (!member.inviteToken) {
+      return;
+    }
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
     const inviteUrl = `${baseUrl}/invite/${member.inviteToken}`;
     try {
@@ -134,6 +146,45 @@ function MemberRow({
       const result = await cancelWorkspaceInvitation(member.id);
       if (result.success) {
         toast.success("Invitation cancelled");
+      } else {
+        toast.error(result.error);
+      }
+      setIsMenuOpen(false);
+    });
+  };
+
+  const handleMakeAdmin = () => {
+    startTransition(async () => {
+      const { updateMemberRole } = await import("@/lib/actions/workspace");
+      const result = await updateMemberRole(member.id, "admin");
+      if (result.success) {
+        toast.success(`${member.name} is now an admin`);
+      } else {
+        toast.error(result.error);
+      }
+      setIsMenuOpen(false);
+    });
+  };
+
+  const handleMakeMember = () => {
+    startTransition(async () => {
+      const { updateMemberRole } = await import("@/lib/actions/workspace");
+      const result = await updateMemberRole(member.id, "member");
+      if (result.success) {
+        toast.success(`${member.name} is now a member`);
+      } else {
+        toast.error(result.error);
+      }
+      setIsMenuOpen(false);
+    });
+  };
+
+  const handleRemoveMember = () => {
+    startTransition(async () => {
+      const { removeMember } = await import("@/lib/actions/workspace");
+      const result = await removeMember(member.id);
+      if (result.success) {
+        toast.success(`${member.name} has been removed`);
       } else {
         toast.error(result.error);
       }
@@ -176,12 +227,7 @@ function MemberRow({
         <Badge
           className="gap-1"
           style={{
-            backgroundColor:
-              member.role === "owner"
-                ? "color-mix(in oklch, var(--accent-teal) 15%, transparent)"
-                : member.role === "admin"
-                  ? "color-mix(in oklch, var(--accent-amber) 15%, transparent)"
-                  : undefined,
+            backgroundColor: getRoleBackgroundColor(member.role),
             color: member.role !== "member" ? role.color : undefined,
             borderColor:
               member.role !== "member"
@@ -249,13 +295,13 @@ function MemberRow({
               </>
             )}
             {member.status === "active" && member.role === "member" && (
-              <DropdownMenuItem className="gap-2">
+              <DropdownMenuItem className="gap-2" onClick={handleMakeAdmin}>
                 <IconArrowUp className="h-4 w-4" />
                 Make Admin
               </DropdownMenuItem>
             )}
             {member.status === "active" && member.role === "admin" && (
-              <DropdownMenuItem className="gap-2">
+              <DropdownMenuItem className="gap-2" onClick={handleMakeMember}>
                 <IconArrowDown className="h-4 w-4" />
                 Make Member
               </DropdownMenuItem>
@@ -272,7 +318,10 @@ function MemberRow({
               member.role !== "owner" && (
                 <>
                   {member.role !== "owner" && <DropdownMenuSeparator />}
-                  <DropdownMenuItem className="gap-2 text-destructive focus:text-destructive">
+                  <DropdownMenuItem
+                    className="gap-2 text-destructive focus:text-destructive"
+                    onClick={handleRemoveMember}
+                  >
                     <IconTrash className="h-4 w-4" />
                     Remove
                   </DropdownMenuItem>
@@ -295,12 +344,18 @@ export function TeamMembersTable({
   const sortedMembers = [...members].sort((a, b) => {
     // Active members before pending
     if (a.status !== b.status) {
-      if (a.status === "pending") return 1;
-      if (b.status === "pending") return -1;
+      if (a.status === "pending") {
+        return 1;
+      }
+      if (b.status === "pending") {
+        return -1;
+      }
     }
     const roleOrder = { owner: 0, admin: 1, member: 2 };
     const roleCompare = roleOrder[a.role] - roleOrder[b.role];
-    if (roleCompare !== 0) return roleCompare;
+    if (roleCompare !== 0) {
+      return roleCompare;
+    }
     return a.name.localeCompare(b.name);
   });
 

@@ -26,11 +26,16 @@ export default async function DashboardLayout({
     redirect("/sign-in");
   }
 
+  // Check if email is verified
+  if (!session.user.emailVerified) {
+    redirect("/verify-email");
+  }
+
   // Get user with workspace
   const data = await getUserWithWorkspace(session.user.id);
 
   // If no workspace or onboarding not completed, redirect to onboarding
-  if (!(data && data.workspace.onboardingCompleted)) {
+  if (!data?.workspace.onboardingCompleted) {
     redirect("/onboarding");
   }
 
