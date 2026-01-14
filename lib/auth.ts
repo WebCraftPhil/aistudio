@@ -10,7 +10,22 @@ import { sendPasswordResetEmail, sendVerificationEmail } from "./email";
 // Schema object for drizzle adapter
 const schema = { user, session, account, verification, workspace };
 
+// Helper to get the base URL for auth flows
+function getAuthBaseUrl(): string {
+  if (process.env.BETTER_AUTH_URL) {
+    return process.env.BETTER_AUTH_URL;
+  }
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL;
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  return "http://localhost:3000";
+}
+
 export const auth = betterAuth({
+  baseURL: getAuthBaseUrl(),
   database: drizzleAdapter(db, {
     provider: "pg",
     schema,
@@ -19,9 +34,64 @@ export const auth = betterAuth({
     enabled: true,
     minPasswordLength: 8,
     requireEmailVerification: true,
-    sendResetPassword: async ({ user: resetUser, url }) => {
-      // Don't await to prevent timing attacks
-      void sendPasswordResetEmail(resetUser.email, resetUser.name, url);
+    sendResetPassword: async ({ user: resetUser, url, token }) => {
+      // Construct the correct reset password URL
+      // Extract token from URL if not provided directly, or use the token parameter
+      let resetToken: string | undefined = token;
+
+      if (!resetToken && url) {
+        // Try to extract token from the URL
+        try {
+          const urlObj = new URL(url);
+          // Check if token is in query params
+          const tokenFromParams =
+            urlObj.searchParams.get("token") ||
+            urlObj.searchParams.get("resetToken");
+          resetToken = tokenFromParams ?? undefined;
+          // If not in query, check if it's in the path (e.g., /reset-password/token or /invite/token)
+          if (!resetToken) {
+            const pathParts = urlObj.pathname.split("/").filter(Boolean);
+            // Look for token-like strings (long alphanumeric)
+            const tokenMatch = pathParts.find((part) => part.length > 20);
+            if (tokenMatch) {
+              resetToken = tokenMatch;
+            }
+          }
+        } catch {
+          // If URL parsing fails, try to extract token from string
+          const tokenMatch = url.match(
+            /[/?](?:token|resetToken)=?([A-Za-z0-9_-]{20,})/
+          );
+          if (tokenMatch) {
+            resetToken = tokenMatch[1];
+          } else {
+            // Last resort: extract any long alphanumeric string
+            const lastPart = url.split("/").pop();
+            if (lastPart && lastPart.length > 20) {
+              resetToken = lastPart.split("?")[0].split("#")[0];
+            }
+          }
+        }
+      }
+
+      // Build the correct reset password URL
+      const baseUrl = getAuthBaseUrl();
+      const resetLink = resetToken
+        ? `${baseUrl}/reset-password?token=${resetToken}`
+        : url; // Fallback to original URL if we can't extract token
+
+      // Validate URL before sending
+      try {
+        new URL(resetLink);
+        // Don't await to prevent timing attacks
+        void sendPasswordResetEmail(resetUser.email, resetUser.name, resetLink);
+      } catch (error) {
+        console.error("Failed to construct reset password URL:", error);
+        console.error("Original URL:", url);
+        console.error("Extracted token:", resetToken);
+        // Still try to send with original URL as fallback
+        void sendPasswordResetEmail(resetUser.email, resetUser.name, url);
+      }
     },
     resetPasswordTokenExpiresIn: 60 * 60, // 1 hour
   },

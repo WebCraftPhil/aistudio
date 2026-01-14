@@ -423,14 +423,41 @@ export async function createWorkspaceMemberInvitation(
       );
 
     if (existingInvitation) {
-      // Return existing invitation link
+      // Return existing invitation link and resend email
       const baseUrl =
         process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+      const inviteUrl = `${baseUrl}/invite/${existingInvitation.token}`;
+
+      // Fetch workspace name for email
+      const [workspaceData] = await db
+        .select({ name: workspace.name })
+        .from(workspace)
+        .where(eq(workspace.id, workspaceId))
+        .limit(1);
+
+      // Resend invite email
+      if (workspaceData) {
+        try {
+          await sendInviteEmail(
+            normalizedEmail,
+            currentUser.name,
+            workspaceData.name,
+            inviteUrl
+          );
+        } catch (emailError) {
+          console.error(
+            "[invitations:createWorkspaceMember] Email failed:",
+            emailError
+          );
+          // Don't fail the action if email fails
+        }
+      }
+
       return {
         success: true,
         data: {
           token: existingInvitation.token,
-          inviteUrl: `${baseUrl}/invite/${existingInvitation.token}`,
+          inviteUrl,
         },
       };
     }
@@ -450,6 +477,31 @@ export async function createWorkspaceMemberInvitation(
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const inviteUrl = `${baseUrl}/invite/${token}`;
+
+    // Fetch workspace name and inviter name for email
+    const [workspaceData] = await db
+      .select({ name: workspace.name })
+      .from(workspace)
+      .where(eq(workspace.id, workspaceId))
+      .limit(1);
+
+    // Send invite email automatically
+    if (workspaceData) {
+      try {
+        await sendInviteEmail(
+          normalizedEmail,
+          currentUser.name,
+          workspaceData.name,
+          inviteUrl
+        );
+      } catch (emailError) {
+        console.error(
+          "[invitations:createWorkspaceMember] Email failed:",
+          emailError
+        );
+        // Don't fail the action if email fails - user can copy the link
+      }
+    }
 
     revalidatePath("/dashboard/settings");
 
@@ -661,5 +713,104 @@ export async function cancelWorkspaceInvitation(
   } catch (error) {
     console.error("[invitations:cancelWorkspace] Error:", error);
     return { success: false, error: "Failed to cancel invitation" };
+  }
+}
+
+/**
+ * Resend a workspace invitation email
+ * Workspace owners and admins can resend invitations for their workspace
+ */
+export async function resendWorkspaceInvitation(
+  invitationId: string
+): Promise<ActionResult<{ expiresAt: Date }>> {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const [currentUser] = await db
+      .select()
+      .from(user)
+      .where(eq(user.id, session.user.id));
+
+    if (!currentUser?.workspaceId) {
+      return { success: false, error: "Workspace not found" };
+    }
+
+    // Check if user is owner or admin
+    if (currentUser.role !== "owner" && currentUser.role !== "admin") {
+      return {
+        success: false,
+        error: "Only owners and admins can resend invitations",
+      };
+    }
+
+    // Get existing invitation with workspace
+    const [existingInvite] = await db
+      .select({
+        invitation,
+        workspaceName: workspace.name,
+      })
+      .from(invitation)
+      .innerJoin(workspace, eq(invitation.workspaceId, workspace.id))
+      .where(
+        and(
+          eq(invitation.id, invitationId),
+          eq(invitation.workspaceId, currentUser.workspaceId)
+        )
+      );
+
+    if (!existingInvite) {
+      return { success: false, error: "Invitation not found" };
+    }
+
+    if (existingInvite.invitation.acceptedAt) {
+      return { success: false, error: "Invitation has already been accepted" };
+    }
+
+    // Check if invitation is expired - if so, generate new token and extend expiry
+    const isExpired = new Date() > existingInvite.invitation.expiresAt;
+    let token = existingInvite.invitation.token;
+    let expiresAt = existingInvite.invitation.expiresAt;
+
+    if (isExpired) {
+      token = nanoid(32);
+      expiresAt = addDays(new Date(), 7);
+
+      // Update invitation with new token and expiry
+      await db
+        .update(invitation)
+        .set({
+          token,
+          expiresAt,
+        })
+        .where(eq(invitation.id, invitationId));
+    }
+
+    // Send invite email
+    const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/invite/${token}`;
+    try {
+      await sendInviteEmail(
+        existingInvite.invitation.email,
+        currentUser.name,
+        existingInvite.workspaceName,
+        inviteLink
+      );
+    } catch (emailError) {
+      console.error("[invitations:resendWorkspace] Email failed:", emailError);
+      return {
+        success: false,
+        error:
+          "Failed to send email. Please try again or copy the invite link.",
+      };
+    }
+
+    revalidatePath("/dashboard/settings");
+
+    return { success: true, data: { expiresAt } };
+  } catch (error) {
+    console.error("[invitations:resendWorkspace] Error:", error);
+    return { success: false, error: "Failed to resend invitation" };
   }
 }

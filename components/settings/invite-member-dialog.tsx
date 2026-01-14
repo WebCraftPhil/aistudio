@@ -131,8 +131,8 @@ export function InviteMemberDialog({
             </DialogTitle>
             <DialogDescription>
               {inviteUrl
-                ? "Share this link with your team member"
-                : "Create an invitation link to share"}
+                ? "Email sent! You can also share this link manually"
+                : "Create an invitation to invite a team member"}
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -156,9 +156,9 @@ export function InviteMemberDialog({
                   />
                 </div>
                 <div>
-                  <p className="font-semibold text-lg">Invitation Created!</p>
+                  <p className="font-semibold text-lg">Invitation Sent!</p>
                   <p className="text-muted-foreground text-sm">
-                    Share this link with {email}
+                    An email has been sent to {email}
                   </p>
                 </div>
               </div>

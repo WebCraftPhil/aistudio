@@ -7,6 +7,7 @@ import {
   IconCrown,
   IconDots,
   IconLoader2,
+  IconMail,
   IconShield,
   IconTrash,
   IconUser,
@@ -23,7 +24,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { cancelWorkspaceInvitation } from "@/lib/actions/invitations";
+import {
+  cancelWorkspaceInvitation,
+  resendWorkspaceInvitation,
+} from "@/lib/actions/invitations";
 import type { MemberStatus, TeamMember, UserRole } from "@/lib/mock/workspace";
 import { cn } from "@/lib/utils";
 
@@ -139,6 +143,18 @@ function MemberRow({
       toast.error("Failed to copy link");
     }
     setIsMenuOpen(false);
+  };
+
+  const handleResendInvite = () => {
+    startTransition(async () => {
+      const result = await resendWorkspaceInvitation(member.id);
+      if (result.success) {
+        toast.success("Invitation email sent");
+      } else {
+        toast.error(result.error);
+      }
+      setIsMenuOpen(false);
+    });
   };
 
   const handleCancelInvite = () => {
@@ -286,6 +302,13 @@ function MemberRow({
               <>
                 <DropdownMenuItem
                   className="gap-2"
+                  onClick={handleResendInvite}
+                >
+                  <IconMail className="h-4 w-4" />
+                  Resend Email
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="gap-2"
                   onClick={handleCopyInviteLink}
                 >
                   <IconCopy className="h-4 w-4" />
@@ -317,7 +340,7 @@ function MemberRow({
             ) : (
               member.role !== "owner" && (
                 <>
-                  {member.role !== "owner" && <DropdownMenuSeparator />}
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="gap-2 text-destructive focus:text-destructive"
                     onClick={handleRemoveMember}
