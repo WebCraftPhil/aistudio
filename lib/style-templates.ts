@@ -10,57 +10,6 @@ export interface StyleTemplate {
   comingSoon?: boolean;
 }
 
-// Room types for context in prompts
-export interface RoomTypeOption {
-  id: string;
-  label: string;
-  icon: string; // Tabler icon name
-  description: string;
-}
-
-export const ROOM_TYPES: RoomTypeOption[] = [
-  {
-    id: "living-room",
-    label: "Living Room",
-    icon: "IconSofa",
-    description: "Living spaces, family rooms, lounges",
-  },
-  {
-    id: "bedroom",
-    label: "Bedroom",
-    icon: "IconBed",
-    description: "Bedrooms, master suites, guest rooms",
-  },
-  {
-    id: "kitchen",
-    label: "Kitchen",
-    icon: "IconToolsKitchen2",
-    description: "Kitchens and cooking areas",
-  },
-  {
-    id: "bathroom",
-    label: "Bathroom",
-    icon: "IconBath",
-    description: "Bathrooms, en-suites, powder rooms",
-  },
-  {
-    id: "dining-room",
-    label: "Dining Room",
-    icon: "IconArmchair",
-    description: "Dining areas and breakfast nooks",
-  },
-  {
-    id: "office",
-    label: "Office",
-    icon: "IconDesk",
-    description: "Home offices and study rooms",
-  },
-];
-
-export function getRoomTypeById(id: string): RoomTypeOption | undefined {
-  return ROOM_TYPES.find((r) => r.id === id);
-}
-
 // Generate a prompt with room type context and architectural preservation
 export function generatePrompt(
   template: StyleTemplate,

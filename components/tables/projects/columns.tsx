@@ -22,7 +22,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { Project, ProjectStatus, RoomType } from "@/lib/db/schema";
-import { getRoomTypeById, getTemplateById } from "@/lib/style-templates";
+import { getRoomTypeLabel } from "@/lib/room-types";
+import { getTemplateById } from "@/lib/style-templates";
 
 // Status styling
 const statusConfig: Record<
@@ -53,22 +54,6 @@ const statusConfig: Record<
     color: "var(--accent-red)",
     icon: <IconAlertTriangle className="h-3 w-3" />,
   },
-};
-
-// Room type labels (English)
-const roomTypeLabels: Partial<Record<RoomType, string>> = {
-  "living-room": "Living Room",
-  kitchen: "Kitchen",
-  bedroom: "Bedroom",
-  bathroom: "Bathroom",
-  office: "Office",
-  "dining-room": "Dining Room",
-  hallway: "Hallway",
-  exterior: "Exterior",
-  garden: "Garden",
-  terrace: "Terrace",
-  garage: "Garage",
-  other: "Other",
 };
 
 function formatRelativeDate(date: Date): string {
@@ -166,10 +151,7 @@ const RoomTypeCell = memo(({ roomType }: { roomType: string | null }) => {
   if (!roomType) {
     return <span className="text-muted-foreground/50">—</span>;
   }
-  const label =
-    roomTypeLabels[roomType as RoomType] ||
-    getRoomTypeById(roomType)?.label ||
-    roomType;
+  const label = getRoomTypeLabel(roomType as RoomType);
   return <Badge variant="tag">{label}</Badge>;
 });
 RoomTypeCell.displayName = "RoomTypeCell";

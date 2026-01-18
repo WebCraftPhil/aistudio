@@ -52,7 +52,12 @@ import {
   updateImageRoomType,
 } from "@/lib/actions";
 import type { ImageGeneration, Project, ProjectStatus } from "@/lib/db/schema";
-import { getTemplateById, ROOM_TYPES } from "@/lib/style-templates";
+import {
+  getRoomTypeLabel,
+  ROOM_TYPE_IDS,
+  type RoomType,
+} from "@/lib/room-types";
+import { getTemplateById } from "@/lib/style-templates";
 import { cn } from "@/lib/utils";
 import type { inpaintImageTask } from "@/trigger/inpaint-image";
 import type { processImageTask } from "@/trigger/process-image";
@@ -1496,8 +1501,7 @@ export function ProjectDetailContent({
                         {/* Room type badge */}
                         {currentRoomType && (
                           <div className="absolute top-2 right-2 rounded-full bg-[var(--accent-teal)] px-2 py-0.5 font-medium text-white text-xs">
-                            {ROOM_TYPES.find((r) => r.id === currentRoomType)
-                              ?.label || currentRoomType}
+                            {getRoomTypeLabel(currentRoomType as RoomType)}
                           </div>
                         )}
                       </div>
@@ -1513,13 +1517,13 @@ export function ProjectDetailContent({
                             <SelectValue placeholder="Select room type" />
                           </SelectTrigger>
                           <SelectContent>
-                            {ROOM_TYPES.map((room) => (
+                            {ROOM_TYPE_IDS.map((roomType) => (
                               <SelectItem
                                 className="text-xs"
-                                key={room.id}
-                                value={room.id}
+                                key={roomType}
+                                value={roomType}
                               >
-                                {room.label}
+                                {getRoomTypeLabel(roomType)}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -1679,9 +1683,9 @@ export function ProjectDetailContent({
                   <SelectValue placeholder="Assign room type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {ROOM_TYPES.map((room) => (
-                    <SelectItem key={room.id} value={room.id}>
-                      {room.label}
+                  {ROOM_TYPE_IDS.map((roomType) => (
+                    <SelectItem key={roomType} value={roomType}>
+                      {getRoomTypeLabel(roomType)}
                     </SelectItem>
                   ))}
                 </SelectContent>

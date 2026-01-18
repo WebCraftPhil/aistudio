@@ -6,12 +6,14 @@ import {
   IconCheck,
   IconLoader2,
   IconPalette,
+  IconPhoto,
   IconSparkles,
   IconUpload,
 } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { ConfirmStep } from "@/components/projects/steps/confirm-step";
+import { RoomTypeStep } from "@/components/projects/steps/room-type-step";
 import { StyleStep } from "@/components/projects/steps/style-step";
 import { UploadStep } from "@/components/projects/steps/upload-step";
 import { Button } from "@/components/ui/button";
@@ -38,6 +40,11 @@ interface NewProjectDialogProps {
 const STEPS: { id: CreationStep; label: string; icon: React.ReactNode }[] = [
   { id: "upload", label: "Upload", icon: <IconUpload className="h-4 w-4" /> },
   { id: "style", label: "Style", icon: <IconPalette className="h-4 w-4" /> },
+  {
+    id: "room-type",
+    label: "Room Types",
+    icon: <IconPhoto className="h-4 w-4" />,
+  },
   { id: "confirm", label: "Confirm", icon: <IconCheck className="h-4 w-4" /> },
 ];
 
@@ -125,9 +132,6 @@ export function NewProjectDialog({
       const projectFormData = new FormData();
       projectFormData.set("name", creation.projectName);
       projectFormData.set("styleTemplateId", creation.selectedTemplate.id);
-      if (creation.roomType) {
-        projectFormData.set("roomType", creation.roomType);
-      }
 
       const projectResult = await createProjectAction(projectFormData);
 
@@ -142,7 +146,12 @@ export function NewProjectDialog({
       // Step 2: Upload images directly to Supabase (client-side)
       // Note: Processing is gated by payment status in the server action
       const files = creation.images.map((img) => img.file);
-      const uploadSuccess = await imageUpload.uploadImages(project.id, files);
+      const roomTypes = creation.images.map((img) => img.roomType);
+      const uploadSuccess = await imageUpload.uploadImages(
+        project.id,
+        files,
+        roomTypes
+      );
 
       if (!uploadSuccess) {
         console.error("Failed to upload images:", imageUpload.error);
@@ -243,6 +252,10 @@ export function NewProjectDialog({
       title: "Choose Style",
       description: "Select a transformation style for your photos",
     },
+    "room-type": {
+      title: "Assign Room Types",
+      description: "Label each image so we can generate precise prompts",
+    },
     confirm: {
       title: "Review & Confirm",
       description: "Name your project and review before processing",
@@ -285,6 +298,12 @@ export function NewProjectDialog({
             <StyleStep
               onSelectTemplate={creation.setSelectedTemplate}
               selectedTemplate={creation.selectedTemplate}
+            />
+          )}
+          {creation.step === "room-type" && (
+            <RoomTypeStep
+              images={creation.images}
+              onUpdateRoomType={creation.updateImageRoomType}
             />
           )}
           {creation.step === "confirm" && (

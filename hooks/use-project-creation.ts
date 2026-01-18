@@ -8,14 +8,14 @@ export interface UploadedImage {
   file: File;
   preview: string;
   name: string;
+  roomType: string | null;
 }
 
-export type CreationStep = "upload" | "style" | "confirm";
+export type CreationStep = "upload" | "style" | "room-type" | "confirm";
 
 export interface ProjectCreationState {
   step: CreationStep;
   images: UploadedImage[];
-  roomType: string | null;
   selectedTemplate: StyleTemplate | null;
   projectName: string;
   isSubmitting: boolean;
@@ -24,7 +24,6 @@ export interface ProjectCreationState {
 const INITIAL_STATE: ProjectCreationState = {
   step: "upload",
   images: [],
-  roomType: null,
   selectedTemplate: null,
   projectName: "",
   isSubmitting: false,
@@ -43,6 +42,7 @@ export function useProjectCreation() {
       file,
       preview: URL.createObjectURL(file),
       name: file.name,
+      roomType: null,
     }));
 
     setState((prev) => ({
@@ -64,8 +64,13 @@ export function useProjectCreation() {
     });
   }, []);
 
-  const setRoomType = useCallback((roomType: string | null) => {
-    setState((prev) => ({ ...prev, roomType }));
+  const updateImageRoomType = useCallback((id: string, roomType: string) => {
+    setState((prev) => ({
+      ...prev,
+      images: prev.images.map((img) =>
+        img.id === id ? { ...img, roomType } : img
+      ),
+    }));
   }, []);
 
   const setSelectedTemplate = useCallback((template: StyleTemplate | null) => {
@@ -92,17 +97,17 @@ export function useProjectCreation() {
         return state.images.length > 0;
       case "style":
         return state.selectedTemplate !== null;
+      case "room-type":
+        return (
+          state.images.length > 0 &&
+          state.images.every((image) => Boolean(image.roomType))
+        );
       case "confirm":
         return state.projectName.trim().length > 0;
       default:
         return false;
     }
-  }, [
-    state.step,
-    state.images.length,
-    state.selectedTemplate,
-    state.projectName,
-  ]);
+  }, [state]);
 
   const goToNextStep = useCallback(() => {
     if (!canProceed()) {
@@ -114,6 +119,8 @@ export function useProjectCreation() {
         case "upload":
           return { ...prev, step: "style" };
         case "style":
+          return { ...prev, step: "room-type" };
+        case "room-type":
           return { ...prev, step: "confirm" };
         default:
           return prev;
@@ -126,8 +133,10 @@ export function useProjectCreation() {
       switch (prev.step) {
         case "style":
           return { ...prev, step: "upload" };
-        case "confirm":
+        case "room-type":
           return { ...prev, step: "style" };
+        case "confirm":
+          return { ...prev, step: "room-type" };
         default:
           return prev;
       }
@@ -139,7 +148,7 @@ export function useProjectCreation() {
     setStep,
     addImages,
     removeImage,
-    setRoomType,
+    updateImageRoomType,
     setSelectedTemplate,
     setProjectName,
     setIsSubmitting,

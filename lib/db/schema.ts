@@ -461,6 +461,7 @@ export type RoomType =
   | "exterior"
   | "other";
 
+
 // Video types
 export type VideoProjectStatus =
   | "draft"
