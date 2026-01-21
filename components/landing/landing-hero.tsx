@@ -6,16 +6,7 @@ import { Suspense } from "react";
 import { useSession } from "@/lib/auth-client";
 
 function HeroAuthButton() {
-  const { data: session, isPending } = useSession();
-
-  if (isPending) {
-    return (
-      <div
-        className="h-12 w-36 animate-pulse rounded-full"
-        style={{ backgroundColor: "var(--landing-border)" }}
-      />
-    );
-  }
+  const { data: session } = useSession();
 
   const href = session ? "/dashboard" : "/sign-in";
   const text = session ? "Go to Dashboard" : "Start for Free";
