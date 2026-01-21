@@ -20,8 +20,12 @@
 # production
 /build
 
+# config files with secrets
+.mcp.json
+
 # misc
 .DS_Store
+Thumbs.db
 *.pem
 
 # debug
@@ -29,9 +33,16 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+*.log
 
 # env files (can opt-in for committing if needed)
 .env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
+.env.staging
 
 # vercel
 .vercel
@@ -42,3 +53,34 @@ next-env.d.ts
 
 claude.md
 .trigger
+
+# database & backups
+*.db
+*.sqlite
+*.sqlite3
+*.sql
+!drizzle/*.sql
+*.dump
+*.backup
+*.bak
+
+# caches
+.turbo/
+.swc/
+
+# editor/ide
+.idea/
+
+# temp files
+*.swp
+*.swo
+*~
+*.tmp
+*.temp
+
+# secrets & credentials
+*.key
+*.cert
+*.secret
+*.credentials
+secrets/
